@@ -1,0 +1,50 @@
+name: Paper 26.3
+
+on:
+  push:
+    branches: ['main', 'paper26.3']
+    paths-ignore: ['**/*.md', 'LICENSE.txt']
+  pull_request:
+    paths-ignore: ['**/*.md', 'LICENSE.txt']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build plugin and integration fixture
+        run: bash gradlew --no-daemon build integrationJar
+      - name: Test on Paper 26.3
+        run: python3 ci/smoke.py
+      - name: Upload plugin and sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: servux-paper-26.3
+          path: |
+            build/libs/*.jar
+            !build/libs/*-integration-tests.jar
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload server logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-26.3-test-logs
+          retention-days: 7
+          path: |
+            build/ci-server/server.log
+            build/ci-server/network-fixture.json

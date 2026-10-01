@@ -1,0 +1,4 @@
+# Keep source, workflows and Unix scripts portable across Windows and Linux.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.jar binary

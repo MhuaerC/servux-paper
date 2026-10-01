@@ -1,0 +1,5 @@
+name: ServuxIntegration
+version: '1'
+main: fi.dy.masa.servux.paper.integration.IntegrationFixture
+api-version: '26.3'
+depend: [ServuxPaper]

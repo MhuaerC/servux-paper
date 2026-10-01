@@ -1,0 +1,54 @@
+plugins {
+    id 'java'
+    id 'io.papermc.paperweight.userdev' version '2.0.0-beta.24'
+}
+
+group = 'fi.dy.masa.servux'
+version = plugin_version
+base.archivesName = 'servux-paper'
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+}
+
+dependencies {
+    paperweight.paperDevBundle(paper_dev_bundle_version)
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
+}
+
+sourceSets {
+    integration {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+processResources {
+    inputs.property('version', project.version)
+    filesMatching('plugin.yml') { expand(version: project.version) }
+}
+
+jar {
+    from('LICENSE.txt', 'NOTICE.md')
+    manifest.attributes('Implementation-Version': project.version, 'Minecraft-Version': mc_version)
+}
+
+tasks.register('integrationJar', Jar) {
+    archiveClassifier = 'integration-tests'
+    from sourceSets.integration.output
+}
