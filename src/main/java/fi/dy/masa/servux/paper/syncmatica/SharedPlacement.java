@@ -3,7 +3,6 @@ package fi.dy.masa.servux.paper.syncmatica;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 
 /** Syncmatica CORE / CORE_EX metadata. File names are display labels, never filesystem paths. */

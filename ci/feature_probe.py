@@ -167,6 +167,24 @@ class Client(Probe):
             assert result["events"] >= 1, result
         return result
 
+    def verify_slot_order(self):
+        self.control(op="prepare", item="OAK_LOG", deny=False)
+        self.sequence += 1
+        self.send("set_carried_item", struct.pack(">h", 0))
+        packet = varint(0) + blockpos(3, 100, 0) + varint(1)
+        packet += struct.pack(">fff", 2.5, 1.0, 0.5) + b"\x00\x00" + varint(self.sequence)
+        self.send("use_item_on", packet)
+        self.send("set_carried_item", struct.pack(">h", 1))
+        deadline = time.monotonic() + 10
+        while True:
+            assert time.monotonic() < deadline
+            name, body = self.pump()
+            if "ack" in name and "block" in name and read_varint(body.read) >= self.sequence:
+                break
+        result = self.control(op="snapshot")
+        assert "oak_log" in result["state"] and "axis=x" in result["state"], result
+        assert result["slot0_count"] == 4 and result["slot1_count"] == 5 and result["selected_slot"] == 1, result
+
 
 def verify_features(path, resumed=False):
     fixture = json.loads(path.read_text())
@@ -201,6 +219,7 @@ def verify_features(path, resumed=False):
         bed = owner.place("RED_BED", 10, ["red_bed", "facing=east", "part=foot"])
         assert "part=head" in bed["east"] and "facing=east" in bed["east"], bed
         owner.place("OAK_STAIRS", 4, ["oak_stairs", "waterlogged=true"], water=True)
+        owner.verify_slot_order()
         print("SERVUX_EASY_PLACE_OK: V3, survival/creative, offhand, multi-block, water, permission, reach, event cancellation", flush=True)
 
         # Opaque, valid GZIP/NBT schematic-shaped file spanning multiple 16 KiB chunks.

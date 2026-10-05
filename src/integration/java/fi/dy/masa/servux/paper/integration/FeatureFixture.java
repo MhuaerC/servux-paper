@@ -52,6 +52,7 @@ public final class FeatureFixture implements Listener {
                 ItemStack stack = new ItemStack(Material.valueOf(request.get("item").getAsString()), 5);
                 if (offhand) player.getInventory().setItemInOffHand(stack);
                 else player.getInventory().setItemInMainHand(stack);
+                player.getInventory().setItem(1, new ItemStack(Material.OBSERVER, 5));
                 if (request.has("water") && request.get("water").getAsBoolean()) world.getBlockAt(3, 101, 0).setType(Material.WATER, false);
                 if (request.has("deny")) permissions.computeIfAbsent(id, k -> player.addAttachment(plugin))
                         .setPermission("servux.easy_place", !request.get("deny").getAsBoolean());
@@ -68,6 +69,9 @@ public final class FeatureFixture implements Listener {
             response.addProperty("upper", world.getBlockAt(3, 102, 0).getBlockData().getAsString());
             response.addProperty("east", world.getBlockAt(4, 101, 0).getBlockData().getAsString());
             response.addProperty("count", stack.getCount());
+            response.addProperty("slot0_count", player.getInventory().getItem(0) == null ? 0 : player.getInventory().getItem(0).getAmount());
+            response.addProperty("slot1_count", player.getInventory().getItem(1).getAmount());
+            response.addProperty("selected_slot", player.getInventory().getHeldItemSlot());
             response.addProperty("temporary_component", stack.has(DataComponents.BLOCK_STATE));
             response.addProperty("events", events.getOrDefault(id, 0));
             response.addProperty("uuid", id.toString());

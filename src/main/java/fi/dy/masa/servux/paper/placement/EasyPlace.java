@@ -8,6 +8,10 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.PacketType;
+import net.minecraft.network.protocol.PacketUtils;
+import net.minecraft.network.protocol.game.ServerGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import net.minecraft.world.item.BlockItem;
@@ -78,11 +82,9 @@ public final class EasyPlace implements Listener {
                                 pending.decrementAndGet();
                                 return;
                             }
-                            Bukkit.getScheduler().runTask(plugin, () -> {
-                                try {
-                                    if (active && player.isOnline()) handle(player, packet);
-                                } finally { pending.decrementAndGet(); }
-                            });
+                            // Use the same dispatch queue as ordinary packets. A Bukkit next-tick
+                            // task can otherwise run after a later selected-slot packet.
+                            super.channelRead(context, new PlacementPacket(player, packet, pending));
                             return;
                         }
                     }
@@ -90,6 +92,24 @@ public final class EasyPlace implements Listener {
                 }
             });
         });
+    }
+
+    private final class PlacementPacket implements Packet<ServerGamePacketListener> {
+        private final Player player;
+        private final ServerboundUseItemOnPacket original;
+        private final AtomicInteger pending;
+        private PlacementPacket(Player player, ServerboundUseItemOnPacket original, AtomicInteger pending) {
+            this.player = player;
+            this.original = original;
+            this.pending = pending;
+        }
+        @Override public PacketType<ServerboundUseItemOnPacket> type() { return original.type(); }
+        @Override public void handle(ServerGamePacketListener listener) {
+            PacketUtils.ensureRunningOnSameThread(this, listener, ((CraftPlayer) player).getHandle().level());
+            try {
+                if (active && player.isOnline()) EasyPlace.this.handle(player, original);
+            } finally { pending.decrementAndGet(); }
+        }
     }
 
     private void handle(Player bukkit, ServerboundUseItemOnPacket packet) {
