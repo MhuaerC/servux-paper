@@ -47,4 +47,5 @@ jobs:
           retention-days: 7
           path: |
             build/ci-server/server.log
+            build/ci-server/server-restart.log
             build/ci-server/network-fixture.json

@@ -57,7 +57,7 @@ public final class ServuxPaperCommand
                     .executes(ctx ->
                     {
                         ctx.getSource().getSender().sendPlainMessage(
-                            "Servux (Paper) channels: hud_data, structures, entity_data. Edit config.yml and run /servux reload to apply changes."
+                            "Servux (Paper): hud_data, structures, entity_data, Easy Place V3, Syncmatica. Edit config.yml and run /servux reload to apply changes."
                         );
                         return Command.SINGLE_SUCCESS;
                     }))

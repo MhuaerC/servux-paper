@@ -8,6 +8,7 @@ import time
 import urllib.request
 
 from network_probe import verify_network
+from feature_probe import verify_features
 
 
 def main():
@@ -43,7 +44,14 @@ def main():
         'generator-settings={"layers":[{"block":"minecraft:bedrock","height":1},{"block":"minecraft:dirt","height":2},{"block":"minecraft:grass_block","height":1}],"biome":"minecraft:plains"}\n'
         "max-players=2\nspawn-protection=0\n"
     )
-    log_path = folder / "server.log"
+    for resumed in (False, True):
+        run_server(folder, resumed)
+
+
+def run_server(folder, resumed):
+    # A second JVM proves persistence rather than just retention in an in-memory map.
+    (folder / "network-fixture.json").unlink(missing_ok=True)
+    log_path = folder / ("server-restart.log" if resumed else "server.log")
     with log_path.open("w") as log:
         process = subprocess.Popen(["java", "-Xms512M", "-Xmx2G", "-jar", "paper.jar", "--nogui"],
                                    cwd=folder, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT, text=True)
@@ -59,16 +67,14 @@ def main():
             else:
                 raise TimeoutError("Paper startup timed out")
             verify_network(folder / "network-fixture.json")
-            # Second login also exercises disconnect cleanup and fresh subscriptions.
-            time.sleep(1)
-            verify_network(folder / "network-fixture.json")
+            verify_features(folder / "network-fixture.json", resumed=resumed)
             process.stdin.write("servux reload\nservux list\nstop\n")
             process.stdin.flush()
             assert process.wait(timeout=60) == 0, "Unclean server shutdown"
             output = log_path.read_text(errors="replace")
             for marker in ("Error occurred while enabling", "Error occurred while disabling", "Could not pass event", "generated an exception", "LEAK:"):
                 assert marker not in output, marker
-            print("SERVUX_ACTIONS_OK: Paper startup, TCP handshakes, NBT, permissions, recipes, fragments, reconnect and shutdown")
+            print("SERVUX_ACTIONS_OK: MiniHUD, Easy Place, Syncmatica, persistence and clean shutdown")
         finally:
             if process.poll() is None:
                 process.terminate()

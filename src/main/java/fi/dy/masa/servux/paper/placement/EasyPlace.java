@@ -103,7 +103,7 @@ public final class EasyPlace implements Listener {
         var stack = player.getItemInHand(packet.hand());
         if (!plugin.getConfig().getBoolean("easy_place.enabled", true) || !bukkit.hasPermission("servux.easy_place")
                 || !(stack.getItem() instanceof BlockItem item) || !level.hasChunkAt(clicked)
-                || !player.canInteractWithBlock(clicked, 1.0)) {
+                || !player.isWithinBlockInteractionRange(clicked, 1.0)) {
             reject(bukkit, packet);
             return;
         }
@@ -124,7 +124,9 @@ public final class EasyPlace implements Listener {
         // (beds/doors) and Paper's placement events. Never set world blocks or consume items ourselves.
         var originalProperties = stack.get(DataComponents.BLOCK_STATE);
         var properties = new HashMap<String, String>();
-        desired.getValues().forEach((property, value) -> properties.put(property.getName(), propertyValue(property, value)));
+        for (var property : desired.getProperties()) {
+            properties.put(property.getName(), propertyValue(property, desired.getValue(property)));
+        }
         var working = stack.copy();
         working.set(DataComponents.BLOCK_STATE, new BlockItemStateProperties(properties));
         player.setItemInHand(packet.hand(), working);

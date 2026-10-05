@@ -25,3 +25,13 @@ License: https://www.apache.org/licenses/LICENSE-2.0
 
 The original LGPL license text is retained verbatim; its publication date is not
 the Minecraft compatibility date of this project.
+
+Changes on 2026-10-05 add Paper integration for accurate placement protocol V3
+and a standalone Syncmatica-compatible sharing service. The V3 property whitelist,
+ordering and bit layout follow Servux / Litematica by masa and sakura-ryoko (LGPL-3.0):
+https://github.com/sakura-ryoko/servux/blob/57834cc5add156cfec07ef5ab72e03fa771a953d/src/main/java/fi/dy/masa/servux/util/PlacementHandler.java
+
+Syncmatica packet layouts and feature negotiation were referenced from End-Tech's
+Syncmatica (CC0-1.0), commit `3fa9575207bddd51cce447140a2ebab6056c3e48`:
+https://github.com/End-Tech/syncmatica
+The Paper sharing implementation is new code; it implements the public wire protocol.

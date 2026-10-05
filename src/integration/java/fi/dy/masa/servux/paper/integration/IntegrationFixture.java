@@ -27,6 +27,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class IntegrationFixture extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
+        new FeatureFixture(this);
         Bukkit.getPluginManager().registerEvents(this, this);
         Bukkit.getScheduler().runTask(this, () -> {
             try {
