@@ -6,6 +6,8 @@ import fi.dy.masa.servux.paper.commands.ServuxPaperCommand;
 import fi.dy.masa.servux.paper.network.EntitiesChannel;
 import fi.dy.masa.servux.paper.network.HudMetadataChannel;
 import fi.dy.masa.servux.paper.network.StructuresChannel;
+import fi.dy.masa.servux.paper.placement.EasyPlace;
+import fi.dy.masa.servux.paper.syncmatica.Syncmatica;
 
 /**
  * Entry point for the PaperMC port of Servux's MiniHUD server-side protocol support.
@@ -17,6 +19,8 @@ public class ServuxPaperPlugin extends JavaPlugin
     private HudMetadataChannel hudMetadataChannel;
     private StructuresChannel structuresChannel;
     private EntitiesChannel entitiesChannel;
+    private EasyPlace easyPlace;
+    private Syncmatica syncmatica;
 
     @Override
     public void onEnable()
@@ -38,12 +42,23 @@ public class ServuxPaperPlugin extends JavaPlugin
         this.entitiesChannel = new EntitiesChannel(this);
         this.entitiesChannel.register();
 
-        this.getSLF4JLogger().info("Servux Paper enabled - hud_data, structures and entity_data channels registered.");
+        this.easyPlace = new EasyPlace(this);
+        this.easyPlace.register();
+        this.syncmatica = new Syncmatica(this);
+        try {
+            this.syncmatica.register();
+        } catch (java.io.IOException error) {
+            throw new IllegalStateException("Cannot initialize Syncmatica storage", error);
+        }
+
+        this.getSLF4JLogger().info("Servux Paper enabled - MiniHUD, Easy Place V3 and Syncmatica registered.");
     }
 
     @Override
     public void onDisable()
     {
+        if (this.easyPlace != null) this.easyPlace.unregister();
+        if (this.syncmatica != null) this.syncmatica.unregister();
         if (this.hudMetadataChannel != null)
         {
             this.hudMetadataChannel.unregister();

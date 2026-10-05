@@ -4,9 +4,24 @@ main: fi.dy.masa.servux.paper.ServuxPaperPlugin
 api-version: '26.3'
 description: 'PaperMC port of Servux''s MiniHUD server-side protocol support'
 authors: [masa, sakura-ryoko, MattLavalleeMA, MhuaerC]
-website: https://github.com/MhuaerC/servux
+website: https://github.com/MhuaerC/servux-paper
 
 permissions:
+  servux.easy_place:
+    description: Allows Litematica accurate placement protocol V3
+    default: true
+  servux.syncmatica:
+    description: Allows viewing and downloading shared Syncmatica placements
+    default: true
+  servux.syncmatica.share:
+    description: Allows uploading and sharing schematics
+    default: true
+  servux.syncmatica.modify:
+    description: Allows modifying and removing your own shared placements
+    default: true
+  servux.syncmatica.admin:
+    description: Allows modifying and removing any shared placement
+    default: op
   servux.hud_data:
     description: Allows receiving MiniHUD hud_data sync (spawn position, metadata handshake, etc.)
     default: true

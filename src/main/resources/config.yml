@@ -4,6 +4,19 @@
 # Enables verbose per-request debug logging on the console (mirrors Fabric's servux_main.debug_log).
 debug_log: false
 
+# Litematica: select easyPlaceProtocol = V3 on the client.
+# Standard Paper placement events, reach checks and item consumption still apply.
+easy_place:
+  enabled: true
+
+# Clients need Syncmatica in addition to Litematica and MaLiLib.
+# Files and placement metadata are saved under plugins/ServuxPaper/syncmatica/.
+syncmatica:
+  enabled: true
+  max_file_size_mb: 16
+  max_storage_mb: 256
+  max_placements: 256
+
 hud_data:
   # Ticks between periodic broadcasts (weather ticks, data-logger ticks).
   update_interval: 40
