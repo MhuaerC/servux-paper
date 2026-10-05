@@ -70,7 +70,7 @@ public final class FeatureFixture implements Listener {
             response.addProperty("east", world.getBlockAt(4, 101, 0).getBlockData().getAsString());
             response.addProperty("count", stack.getCount());
             response.addProperty("slot0_count", player.getInventory().getItem(0) == null ? 0 : player.getInventory().getItem(0).getAmount());
-            response.addProperty("slot1_count", player.getInventory().getItem(1).getAmount());
+            response.addProperty("slot1_count", player.getInventory().getItem(1) == null ? 0 : player.getInventory().getItem(1).getAmount());
             response.addProperty("selected_slot", player.getInventory().getHeldItemSlot());
             response.addProperty("temporary_component", stack.has(DataComponents.BLOCK_STATE));
             response.addProperty("events", events.getOrDefault(id, 0));
