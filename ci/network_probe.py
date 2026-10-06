@@ -184,10 +184,7 @@ class Probe:
                 self.entity_id = struct.unpack(">i", body.read(4))[0]
             elif name == "custom_payload":
                 channel = read_utf(body)
-                if channel == "minecraft:register":
-                    self.advertised.update(body.read().decode("utf-8").strip("\0").split("\0"))
-                elif channel in CHANNELS or channel == "servux:ci_fragment":
-                    self.receive_servux(channel, body)
+                self.receive_custom_payload(channel, body)
             if self.phase == "play" and set(CHANNELS) <= self.advertised and self.entity_id is not None and not requests_sent:
                 # Like ClientPlayNetworking.canSend: wait for the server's channel advertisement.
                 # Deliberately send NO client minecraft:register: test the actual outbound transport too.
@@ -201,6 +198,12 @@ class Probe:
                 print("SERVUX_TCP_OK:", sorted(self.metadata), sorted(self.checks), flush=True)
                 return
         raise TimeoutError(f"Incomplete: advertised={self.advertised}, metadata={self.metadata}, checks={self.checks}")
+
+    def receive_custom_payload(self, channel, body):
+        if channel == "minecraft:register":
+            self.advertised.update(body.read().decode("utf-8").strip("\0").split("\0"))
+        elif channel in CHANNELS or channel == "servux:ci_fragment":
+            self.receive_servux(channel, body)
 
     def request_data(self):
         self.custom("servux:hud_metadata", varint(4))

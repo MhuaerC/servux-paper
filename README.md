@@ -32,9 +32,10 @@
 
 ## 多人投影共享
 
-客户端需要安装与游戏版本匹配的 **Syncmatica + Litematica + MaLiLib**。
+客户端需要安装与游戏版本匹配的 **Syncmatica + Litematica + MaLiLib**；本插件对接 **Syncmatica 26.3 / 0.3.20**。
 使用 Syncmatica 的共享/服务器投影列表界面上传和下载投影；其他在线玩家会收到新增和摆放修改。
 本插件实现 `CORE`、`FEATURE`、`MODIFY`、`CORE_EX` 协议，不要求额外安装服务端 Syncmatica 插件。
+通信使用新版 `syncmatica:main` 封装；请使用 `paper.3` 或更新版本，`paper.2` 的旧频道格式会导致此客户端进服断线。
 
 默认玩家可以查看、下载、上传，并修改/删除自己的共享；`servux.syncmatica.admin` 可管理所有共享。
 权限节点为 `servux.syncmatica`、`servux.syncmatica.share`、`servux.syncmatica.modify`。

@@ -75,6 +75,7 @@ public final class FeatureFixture implements Listener {
             response.addProperty("temporary_component", stack.has(DataComponents.BLOCK_STATE));
             response.addProperty("events", events.getOrDefault(id, 0));
             response.addProperty("uuid", id.toString());
+            response.addProperty("sync_codec_packets", SyncmaticaCodecFixture.checkedPackets());
             PayloadTransport.send(player, "servux:feature_test", response.toString().getBytes(StandardCharsets.UTF_8));
         });
         Bukkit.getMessenger().registerOutgoingPluginChannel(plugin, "servux:feature_test");

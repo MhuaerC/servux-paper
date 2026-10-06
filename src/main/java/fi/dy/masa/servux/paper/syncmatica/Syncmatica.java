@@ -32,8 +32,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 import org.bukkit.scheduler.BukkitTask;
 
-/** Compatible with the public Syncmatica CORE, FEATURE, MODIFY and CORE_EX wire protocols. */
+/** Syncmatica 0.3.20 / MC 26.3 envelope, with CORE, FEATURE, MODIFY and CORE_EX messages. */
 public final class Syncmatica implements Listener, PluginMessageListener {
+    private static final String CHANNEL = "syncmatica:main";
     private static final List<String> PACKETS = List.of("register_version", "feature_request", "feature", "confirm_user",
             "register_metadata", "cancel_share", "request_download", "send_litematic", "received_litematic",
             "finished_litematic", "cancel_litematic", "remove_syncmatic", "modify", "modify_request",
@@ -79,10 +80,8 @@ public final class Syncmatica implements Listener, PluginMessageListener {
     public void register() throws IOException {
         Files.createDirectories(directory);
         load();
-        for (String packet : PACKETS) {
-            Bukkit.getMessenger().registerIncomingPluginChannel(plugin, "syncmatica:" + packet, this);
-            Bukkit.getMessenger().registerOutgoingPluginChannel(plugin, "syncmatica:" + packet);
-        }
+        Bukkit.getMessenger().registerIncomingPluginChannel(plugin, CHANNEL, this);
+        Bukkit.getMessenger().registerOutgoingPluginChannel(plugin, CHANNEL);
         Bukkit.getPluginManager().registerEvents(this, plugin);
         maintenance = Bukkit.getScheduler().runTaskTimer(plugin, this::expire, 100, 100);
         Bukkit.getOnlinePlayers().forEach(this::hello);
@@ -93,17 +92,15 @@ public final class Syncmatica implements Listener, PluginMessageListener {
         for (UUID player : List.copyOf(sessions.keySet())) close(player);
         locks.clear();
         HandlerList.unregisterAll(this);
-        for (String packet : PACKETS) {
-            Bukkit.getMessenger().unregisterIncomingPluginChannel(plugin, "syncmatica:" + packet, this);
-            Bukkit.getMessenger().unregisterOutgoingPluginChannel(plugin, "syncmatica:" + packet);
-        }
+        Bukkit.getMessenger().unregisterIncomingPluginChannel(plugin, CHANNEL, this);
+        Bukkit.getMessenger().unregisterOutgoingPluginChannel(plugin, CHANNEL);
     }
 
     @EventHandler public void join(PlayerJoinEvent event) {
         Bukkit.getScheduler().runTaskLater(plugin, () -> hello(event.getPlayer()), 10);
     }
     @EventHandler public void channel(PlayerRegisterChannelEvent event) {
-        if (event.getChannel().equals("syncmatica:register_version")) hello(event.getPlayer());
+        if (event.getChannel().equals(CHANNEL)) hello(event.getPlayer());
     }
     @EventHandler public void quit(PlayerQuitEvent event) { close(event.getPlayer().getUniqueId()); }
 
@@ -114,18 +111,25 @@ public final class Syncmatica implements Listener, PluginMessageListener {
         if (!player.isOnline() || !allowed(player) || sessions.containsKey(player.getUniqueId())) return;
         sessions.put(player.getUniqueId(), new Session());
         // The suffix requests explicit feature negotiation instead of implying unsupported features.
-        send(player, "register_version", b -> b.writeUtf("0.3.15-servux-paper"));
+        send(player, "register_version", b -> b.writeUtf("0.3.20-servux-paper"));
     }
 
     @Override public void onPluginMessageReceived(String channel, Player player, byte[] payload) {
         if (!allowed(player)) { close(player.getUniqueId()); return; }
-        if (payload.length > 32767 || !channel.startsWith("syncmatica:")) return;
-        String packet = channel.substring("syncmatica:".length());
+        if (payload.length > 32767 || !channel.equals(CHANNEL)) return;
         Session session = sessions.get(player.getUniqueId());
         if (session == null) { hello(player); session = sessions.get(player.getUniqueId()); }
         if (session == null) return;
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.wrappedBuffer(payload));
+        String packet = "envelope";
         try {
+            // Modern Syncmatica registers only syncmatica:main. Its body starts with
+            // the inner message identifier; legacy per-message outer channels crash
+            // the client's namespace-wide payload handler with ClassCastException.
+            String message = buffer.readUtf(64);
+            if (!message.startsWith("syncmatica:")) return;
+            packet = message.substring("syncmatica:".length());
+            if (!PACKETS.contains(packet)) return;
             session.lastActivity = System.currentTimeMillis();
             if (packet.equals("feature_request")) {
                 empty(buffer); send(player, "feature", b -> b.writeUtf(FEATURES)); return;
@@ -403,9 +407,10 @@ public final class Syncmatica implements Listener, PluginMessageListener {
     private static void send(Player player, String packet, Consumer<FriendlyByteBuf> writer) {
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
         try {
+            buffer.writeUtf("syncmatica:" + packet);
             writer.accept(buffer);
             byte[] payload = new byte[buffer.readableBytes()]; buffer.readBytes(payload);
-            PayloadTransport.send(player, "syncmatica:" + packet, payload);
+            PayloadTransport.send(player, CHANNEL, payload);
         } finally { buffer.release(); }
     }
 }

@@ -35,3 +35,11 @@ Syncmatica packet layouts and feature negotiation were referenced from End-Tech'
 Syncmatica (CC0-1.0), commit `3fa9575207bddd51cce447140a2ebab6056c3e48`:
 https://github.com/End-Tech/syncmatica
 The Paper sharing implementation is new code; it implements the public wire protocol.
+
+On 2026-10-06 the transport was updated to the Syncmatica 26.3 / 0.3.20 single-channel
+envelope. The integration test downloads the unmodified SyncmaticaPacket and PacketType
+codec sources from sakura-ryoko's Syncmatica fork (CC0-1.0), pinned to
+`37a969e571aa4f7c5cc25ab80c49cca4e8a51cc7`, and verifies their SHA-256 hashes.
+These sources and the minimal mod-constant test stub are only in the integration-test
+JAR, never in the production plugin.
+https://github.com/sakura-ryoko/syncmatica

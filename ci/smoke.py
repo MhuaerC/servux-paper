@@ -72,7 +72,7 @@ def run_server(folder, resumed):
             process.stdin.flush()
             assert process.wait(timeout=60) == 0, "Unclean server shutdown"
             output = log_path.read_text(errors="replace")
-            for marker in ("Error occurred while enabling", "Error occurred while disabling", "Could not pass event", "generated an exception", "LEAK:"):
+            for marker in ("Error occurred while enabling", "Error occurred while disabling", "Could not pass event", "generated an exception", "LEAK:", "SERVUX_SYNC_CLIENT_CODEC_FAILED"):
                 assert marker not in output, marker
             print("SERVUX_ACTIONS_OK: MiniHUD, Easy Place, Syncmatica, persistence and clean shutdown")
         finally:

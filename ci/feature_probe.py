@@ -61,6 +61,19 @@ class Client(Probe):
         self.sequence = 0
         self.run()  # Also exercises the existing MiniHUD protocol on each new connection.
 
+    def receive_custom_payload(self, channel, body):
+        if channel.startswith("syncmatica:"):
+            # Validate every payload from the first login message, before the handshake.
+            # Syncmatica 0.3.20 cannot decode legacy per-message outer channels.
+            assert channel == "syncmatica:main", f"Client would receive DiscardedPayload: {channel}"
+            message = read_utf(body)
+            assert message.startswith("syncmatica:") and message != channel, message
+            self.inbox.append((message, body.read()))
+        elif channel == "servux:feature_test":
+            self.inbox.append((channel, body.read()))
+        else:
+            super().receive_custom_payload(channel, body)
+
     def pump(self):
         name, body = self.read_packet()
         if "disconnect" in name:
@@ -75,7 +88,7 @@ class Client(Probe):
             self.send("accept_teleportation", varint(teleport) + pos + rotation)
             self.send("player_loaded")
         elif name == "custom_payload":
-            self.inbox.append((read_utf(body), body.read()))
+            self.receive_custom_payload(read_utf(body), body)
         return name, body
 
     def take(self, packet, ident=None):
@@ -89,17 +102,24 @@ class Client(Probe):
         raise TimeoutError(f"Missing {channel}, queued={[c for c, _ in self.inbox]}")
 
     def sync(self, packet, body=b""):
-        self.custom("syncmatica:" + packet, body)
+        self.custom("syncmatica:main", utf("syncmatica:" + packet) + body)
 
     def handshake(self, extended=True):
+        # Like the real client, wait for the unsolicited server greeting first.
+        version = read_utf(io.BytesIO(self.take("register_version")))
+        assert version == "0.3.20-servux-paper", version
+        assert "syncmatica:main" in self.advertised
+        assert not any(c.startswith("syncmatica:") and c != "syncmatica:main" for c in self.advertised)
         self.sync("feature_request")
         features = read_utf(io.BytesIO(self.take("feature"))).split("\n")
         assert set(features) == {"CORE", "FEATURE", "MODIFY", "CORE_EX"}
-        self.sync("register_version", utf("0.3.15"))
+        self.sync("register_version", utf("0.3.20"))
         self.take("feature_request")
-        self.sync("feature", utf("CORE\nFEATURE\nMODIFY" + ("\nCORE_EX" if extended else "")))
+        self.sync("feature", utf("CORE\nFEATURE\nMODIFY\nDISPLAY_NAME\nVERSION" + ("\nCORE_EX" if extended else "")))
         assert self.take("confirm_user") == struct.pack(">i", 0)
-        self.player_uuid = self.control(op="snapshot")["uuid"]
+        snapshot = self.control(op="snapshot")
+        self.player_uuid = snapshot["uuid"]
+        assert snapshot["sync_codec_packets"] >= 4, snapshot
 
     def control(self, **request):
         self.custom("servux:feature_test", json.dumps(request).encode())
@@ -273,7 +293,7 @@ def verify_features(path, resumed=False):
         guest.take("remove_syncmatic", alias)
         assert guest.download(ident) == data
         expected_path.write_text(json.dumps({"id": str(ident), "sha256": hashlib.sha256(data).hexdigest()}))
-        print("SERVUX_SYNCMATICA_OK: handshake, two clients, file hash, subregions, broadcast, modify, ownership, corruption, deduplication", flush=True)
+        print("SERVUX_SYNCMATICA_OK: 0.3.20 client codec, login envelope, two clients, file hash, subregions, broadcast, modify, ownership, corruption, deduplication", flush=True)
     finally:
         owner.socket.close()
         if guest is not None:

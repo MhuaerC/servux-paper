@@ -23,6 +23,7 @@ java {
 
 sourceSets {
     integration {
+        java.srcDir layout.buildDirectory.dir('generated/syncmatica-codec')
         compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
         runtimeClasspath += output + compileClasspath
     }

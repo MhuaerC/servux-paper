@@ -26,6 +26,8 @@ jobs:
           distribution: temurin
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
+      - name: Prepare pinned Syncmatica 0.3.20 client codec
+        run: python3 ci/prepare_syncmatica_codec.py
       - name: Build plugin and integration fixture
         run: bash gradlew --no-daemon build integrationJar
       - name: Test on Paper 26.3
